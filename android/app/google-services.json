@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "707443467218",
+    "project_id": "plant-pathologist",
+    "storage_bucket": "plant-pathologist.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:707443467218:android:b3f81b11c40001f8389e0b",
+        "android_client_info": {
+          "package_name": "com.nimash79.PlantPathologist"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpOljFvmpy8zXVLD_XRf3xtW9OM4lyySQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

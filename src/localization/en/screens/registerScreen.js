@@ -1,0 +1,18 @@
+export default {
+    title: "Create your account",
+    input_1: "Full name",
+    input_2: "Email",
+    input_3: "Mobile number",
+    input_4: "Password",
+    input_5: "Confirm password",
+    register: "Create account",
+    login: "Login",
+    loginQuestion: "Already have an account?",
+    registering: "Registering ...",
+    error_fullname: "Please enter your full name.",
+    error_email: "Please enter your email.",
+    error_mobile: "Please enter your mobile number.",
+    error_password: "Please enter a password.",
+    error_confirmPassword: "Please enter your confirm password.",
+    error_conflict: "Password and confirm password are not same.",
+}

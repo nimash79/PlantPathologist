@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>چت روم</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    h2 {
+      color: #024227;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #chat-box {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: #fafafa;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      max-width: 70%;
+    }
+    .received {
+      background-color: #e3f2fd;
+      margin-right: auto;
+    }
+    .sent {
+      background-color: #dcf8c6;
+      margin-left: auto;
+    }
+    .file-message {
+      background-color: #f3f3f3;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 8px 0;
+    }
+    .file-message a {
+      color: #024227;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .file-message a:hover {
+      text-decoration: underline;
+    }
+    .sender-name {
+      font-weight: bold;
+      color: #024227;
+      margin-bottom: 3px;
+    }
+    .input-area {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    #message-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #024227;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #01301c;
+    }
+    .file-upload {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    #file-name {
+      font-size: 14px;
+      color: #666;
+    }
+    .timestamp {
+      font-size: 12px;
+      color: #666;
+      margin-top: 3px;
+      text-align: left;
+    }
+    .system-message {
+      text-align: center;
+      color: #666;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    .loading {
+      text-align: center;
+      padding: 10px;
+      color: #666;
+    }
+    .system-message {
+      text-align: center;
+      color: #666;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="chat-box">
+      <div id="loading" class="loading">Loading Chat history</div>
+    </div>
+    
+    <div class="input-area">
+      <input type="text" id="message-input" placeholder="message here" />
+      <button id="send-btn">send</button>
+    </div>
+    
+    <div class="file-upload">
+      <input type="file" id="file-input" style="display: none;" />
+      <button id="file-btn">choose File</button>
+      <span id="file-name">Nothing has been choosen</span>
+      <button id="upload-btn" disabled>send file</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    function addSystemMessage(text) {
+      const msgElement = document.createElement("div");
+      msgElement.className = "system-message";
+      msgElement.textContent = text;
+      chatBox.appendChild(msgElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function addTextMessage(sender, text, timestamp, isMe) {
+      const msgElement = document.createElement("div");
+      msgElement.className = `message ${isMe ? 'sent' : 'received'}`;
+      
+      msgElement.innerHTML = `
+        <div class="sender-name">${isMe ? 'you' : sender}</div>
+        <div>${text}</div>
+        <div class="timestamp">${timestamp}</div>
+      `;
+      
+      chatBox.appendChild(msgElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function addFileMessage(sender, fileName, fileUrl, fileSize, timestamp, isMe) {
+      const msgElement = document.createElement("div");
+      msgElement.className = `message ${isMe ? 'sent' : 'received'}`;
+      
+      msgElement.innerHTML = `
+        <div class="sender-name">${isMe ? 'you' : sender}</div>
+        <div class="file-message">
+          📎 <a href="${fileUrl}" target="_blank">${fileName}</a> (${fileSize})
+        </div>
+        <div class="timestamp">${timestamp}</div>
+      `;
+      
+      chatBox.appendChild(msgElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    const roomId = prompt("Enter the room id:", "9");
+    const phoneNumber = prompt("Enter your phone number:", "09309167845");
+    const API_URL = "http://151.232.36.49:8000";
+    const config = {
+      ENDPOINTS: {
+        chat: {
+          history_chat: "/api/v1/chat/get-chat",
+          upload_file: "/api/v1/chat/upload_file/"
+        }
+      }
+    };
+
+    // عناصر DOM
+    const chatBox = document.getElementById("chat-box");
+    const loadingElement = document.getElementById("loading");
+    const messageInput = document.getElementById("message-input");
+    const sendBtn = document.getElementById("send-btn");
+    const fileInput = document.getElementById("file-input");
+    const fileBtn = document.getElementById("file-btn");
+    const uploadBtn = document.getElementById("upload-btn");
+    const fileNameSpan = document.getElementById("file-name");
+
+
+    let messages = [];
+    let lastMessageId = 0;
+
+
+    const socket = new WebSocket(`ws://151.232.36.49:8000/ws/chat/${roomId}/${phoneNumber}/`);
+
+
+    socket.onopen = () => {
+      console.log("connected to ws");
+      addSystemMessage("connect to chat");
+      fetchChatHistory();
+    };
+
+    socket.onclose = () => {
+      console.log("disconnected to ws");
+      addSystemMessage("disconnect to chat");
+    };
+
+    socket.onerror = (error) => {
+      console.error("error WebSocket:", error);
+      addSystemMessage("error chat");
+    };
+
+    socket.onmessage = function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        displayMessage(data);
+      } catch (error) {
+        console.error("proccessing chat", error);
+      }
+    };
+
+
+    async function fetchChatHistory() {
+      try {
+        const response = await axios.get(
+          `${API_URL}${config.ENDPOINTS.chat.history_chat}/${roomId}`, 
+          {
+            headers: { },
+          }
+        );
+
+        if (Array.isArray(response.data)) {
+
+          const sortedMessages = response.data.sort((a, b) => 
+            new Date(a.timestamp) - new Date(b.timestamp)
+          );
+          
+          sortedMessages.forEach(msg => {
+            displayMessage(msg);
+          });
+          
+
+          loadingElement.style.display = 'none';
+        }
+      } catch (error) {
+        console.error("error fetching the chat history:", error);
+        addSystemMessage("خطا در بارگذاری تاریخچه چت");
+        loadingElement.textContent = "error fetching the chat history";
+      }
+    }
+
+
+    function displayMessage(msg) {
+      const messageText = msg.message;
+      const sender = msg.sender?.fullName || msg.phoneNumber || "😵‍💫";
+      const isMe = msg.phoneNumber === phoneNumber;
+      const timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('fa-IR') : new Date().toLocaleTimeString('fa-IR');
+
+      if (messageText.startsWith("file:")) {
+        const lines = messageText.split('\n');
+        const fileName = lines[0]?.replace("file:", "").trim();
+        const fileUrl = lines[1] ? `${API_URL}${lines[1]}` : "#";
+        const fileSize = lines[2];
+
+        addFileMessage(sender, fileName, fileUrl, fileSize, timestamp, isMe);
+      } else {
+        addTextMessage(sender, messageText, timestamp, isMe);
+      }
+    }
+
+
+    async function uploadFile(event) {
+      event.preventDefault();
+      
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = "uploadding";
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const response = await axios.post(
+          `${API_URL}${config.ENDPOINTS.chat.upload_file}`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            }
+          }
+        );
+
+        const data = response.data;
+        const fileUrl = `${data.file_url}`;
+        const fileSize = data.file_size;
+        const fileName = data.file_name || file.name;
+
+        const fileMessage = `file: ${fileName}\n${fileUrl}\n${fileSize}`;
+
+        socket.send(JSON.stringify({
+          message: fileMessage,
+          phoneNumber
+        }));
+
+
+        fileInput.value = "";
+        fileNameSpan.textContent = "no file selected";
+      } catch (error) {
+        console.error(error);
+        addSystemMessage(`${error.response?.data?.message || error.message}`);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = "send file";
+      }
+    }
+
+
+    function sendMessage() {
+      const message = messageInput.value.trim();
+      if (message === "") return;
+
+      socket.send(JSON.stringify({
+        message,
+        phoneNumber
+      }));
+
+      messageInput.value = "";
+    }
+
+    uploadBtn.addEventListener("click", uploadFile);
+    fileBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      fileInput.click();
+    });
+
+
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    sendBtn.addEventListener("click", sendMessage);
+    
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        fileNameSpan.textContent = fileInput.files[0].name;
+        uploadBtn.disabled = false;
+      } else {
+        fileNameSpan.textContent = "no file selected";
+        uploadBtn.disabled = true;
+      }
+    });
+  </script>
+
+</body>
+</html>
